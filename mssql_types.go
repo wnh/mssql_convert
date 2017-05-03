@@ -57,6 +57,14 @@ func (col *MSSqlColumn) Scan(rows *sql.Rows) error {
 	)
 }
 
+func ToColumn(col *MSSqlColumn) Column {
+	return Column{
+		OriginalName: col.COLUMN_NAME,
+		NewName:      NameToPsql(col.COLUMN_NAME),
+		col:          col,
+	}
+}
+
 type MSSqlFKey struct {
 	PKTABLE_QUALIFIER string // Name of the table (with the primary key) qualifier. This field can be NULL.
 	PKTABLE_OWNER     string // Name of the table (with the primary key) owner. This field always returns a value.

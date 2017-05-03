@@ -8,14 +8,8 @@ import (
 
 	"database/sql"
 	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/lib/pq"
 )
-
-type config struct {
-	from   string
-	to     string
-	tables []string
-	drop   bool
-}
 
 type Table struct {
 	OriginalName string
@@ -34,25 +28,16 @@ type Column struct {
 type ForeignKey struct {
 }
 
-func ToColumn(col *MSSqlColumn) Column {
-	return Column{
-		OriginalName: col.COLUMN_NAME,
-		NewName:      NameToPsql(col.COLUMN_NAME),
-		col:          col,
-	}
-}
 func main() {
-	from, _, table_names := getArgs()
+	from, to, table_names := getArgs()
 
-	db, err := sql.Open("mssql", from)
-	if err != nil {
-		log.Fatal(err)
-	}
+	msDB := ConnectAndTest("mssql", from)
+	_ = ConnectAndTest("postgres", to)
 
 	tables := []Table{}
 
 	for _, table := range table_names {
-		cols := getColumns(table, db)
+		cols := getColumns(table, msDB)
 		tt := Table{
 			OriginalName: table,
 			NewName:      NameToPsql(table),
@@ -66,6 +51,17 @@ func main() {
 		log.Println(tt.InsertPsql())
 	}
 
+}
+
+func ConnectAndTest(driverName, dataSourceName string) *sql.DB {
+	db, err := sql.Open(driverName, dataSourceName)
+	if err != nil {
+		log.Fatalf("Error opening %s database: %s", driverName, err)
+	}
+	if err = db.Ping(); err != nil {
+		log.Fatalf("Error pinging %s database: %s", driverName, err)
+	}
+	return db
 }
 
 const usage = `mssql_migrate <from> <to> <table> [table ...]`

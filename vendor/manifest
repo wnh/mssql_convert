@@ -10,6 +10,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/lib/pq",
+			"repository": "https://github.com/lib/pq",
+			"vcs": "git",
+			"revision": "2704adc878c21e1329f46f6e56a1c387d788ff94",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "golang.org/x/crypto/md4",
 			"repository": "https://go.googlesource.com/crypto",
 			"vcs": "git",
