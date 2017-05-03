@@ -32,7 +32,7 @@ func main() {
 	from, to, table_names := getArgs()
 
 	msDB := ConnectAndTest("mssql", from)
-	_ = ConnectAndTest("postgres", to)
+	psqlDB := ConnectAndTest("postgres", to)
 
 	tables := []Table{}
 
@@ -45,12 +45,61 @@ func main() {
 		}
 		tables = append(tables, tt)
 
-		log.Println(tt.DropSql())
-		log.Println(tt.CreateSql())
-		log.Println(tt.SelectMSSql())
-		log.Println(tt.InsertPsql())
+		log.Println("Dropping  ", tt.NewName)
+		if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Createing ", tt.NewName)
+		if _, err := psqlDB.Exec(tt.CreateSql()); err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("Copying   ", tt.NewName)
+		if err := CopyTable(msDB, psqlDB, tt); err != nil {
+			log.Fatal(err)
+		}
+
 	}
 
+}
+
+func CopyTable(from, to *sql.DB, table Table) error {
+	tx, err := to.Begin()
+	if err != nil {
+		return err
+	}
+
+	rows, err := from.Query(table.SelectMSSql())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rr := make([]interface{}, len(table.Columns))
+	ra := make([]interface{}, len(table.Columns))
+	for i, _ := range ra {
+		ra[i] = &rr[i]
+	}
+
+	count := 0
+	for rows.Next() {
+		count++
+		rows.Scan(ra...)
+		_, err := tx.Exec(table.InsertPsql(), rr...)
+		if err != nil {
+			log.Println(err)
+		}
+		if count%100 == 0 {
+			log.Print(count)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	log.Printf("Copied %d rows", count)
+	rows.Close()
+	return nil
 }
 
 func ConnectAndTest(driverName, dataSourceName string) *sql.DB {

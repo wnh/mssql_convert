@@ -36,7 +36,7 @@ func (t *Table) InsertPsql() string {
 	place := make([]string, len(t.Columns))
 	for i, c := range t.Columns {
 		names[i] = c.NewName
-		place[i] = fmt.Sprintf(":%d", i+1)
+		place[i] = fmt.Sprintf("$%d", i+1)
 	}
 	nameList := strings.Join(names, ", ")
 	placeList := strings.Join(place, ", ")
@@ -49,6 +49,12 @@ func (c *Column) CreateSql() string {
 }
 
 // Convert MS SQL column to a Postgres type string
+// This is by *no* means complete, its just enough to get my specific tables to
+// convert.
+//
+// Currently it converts most textual representations to TEXT because that
+// covers all the bases. Some nuance may be requied inf the future.
+//
 // Help: http://www.sqlines.com/sql-server-to-postgresql
 func (c *Column) PostgresType() string {
 	out := ""
