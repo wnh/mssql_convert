@@ -1,0 +1,31 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/denisenkom/go-mssqldb",
+			"repository": "https://github.com/denisenkom/go-mssqldb",
+			"vcs": "git",
+			"revision": "e3bd523cf238e14637d0e028becc25651098a138",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/crypto/md4",
+			"repository": "https://go.googlesource.com/crypto",
+			"vcs": "git",
+			"revision": "8e03fc1ab6a36bdb9e7dee75a213c30f0249d0c1",
+			"branch": "master",
+			"path": "/md4",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"vcs": "git",
+			"revision": "0819898fb4973868bba6de59b6aaad75beea9a6a",
+			"branch": "master",
+			"path": "/context",
+			"notests": true
+		}
+	]
+}
