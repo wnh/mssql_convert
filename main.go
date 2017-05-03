@@ -45,6 +45,13 @@ func main() {
 		}
 		tables = append(tables, tt)
 
+		tt.PrimaryKey = getPrimaryKeys(tt, msDB)
+
+		//for _, p := range tt.PrimaryKey {
+		//	log.Printf("%#v", p)
+		//}
+		//log.Println(tt.CreateSql())
+
 		log.Println("Dropping  ", tt.NewName)
 		if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
 			log.Fatal(err)
@@ -120,6 +127,28 @@ func getArgs() (from, to string, tables []string) {
 		log.Fatal("Usage: ", usage)
 	}
 	return os.Args[1], os.Args[2], os.Args[3:]
+}
+
+func getPrimaryKeys(table Table, db *sql.DB) []*Column {
+	rows, err := db.Query(fmt.Sprintf("sp_pkeys %s", table.OriginalName))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out := []*Column{}
+	defer rows.Close()
+	for rows.Next() {
+		pkey := MSSqlPKey{}
+		pkey.Scan(rows)
+
+		for _, c := range table.Columns {
+			if c.OriginalName == pkey.COLUMN_NAME {
+				out = append(out, &c)
+				break
+			}
+		}
+	}
+	return out
 }
 
 func getColumns(table string, db *sql.DB) []Column {

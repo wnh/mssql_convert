@@ -17,6 +17,16 @@ func (t *Table) CreateSql() string {
 	for i, c := range t.Columns {
 		cols[i] = c.CreateSql()
 	}
+
+	if len(t.PrimaryKey) > 0 {
+		pk := make([]string, len(t.PrimaryKey))
+		for i, p := range t.PrimaryKey {
+			pk[i] = p.NewName
+		}
+
+		pkLine := fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pk, ", "))
+		cols = append(cols, pkLine)
+	}
 	return fmt.Sprintf("CREATE TABLE %s (\n   %s\n)", t.NewName, strings.Join(cols, ",\n   "))
 }
 
