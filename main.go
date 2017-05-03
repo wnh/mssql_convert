@@ -6,6 +6,8 @@ import (
 	"os"
 	"unicode"
 
+	flag "github.com/spf13/pflag"
+
 	"database/sql"
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/lib/pq"
@@ -28,15 +30,23 @@ type Column struct {
 type ForeignKey struct {
 }
 
-func main() {
-	from, to, table_names := getArgs()
+type config struct {
+	from   string
+	to     string
+	tables []string
+	drop   bool
+	print  bool
+}
 
-	msDB := ConnectAndTest("mssql", from)
-	psqlDB := ConnectAndTest("postgres", to)
+func main() {
+	cfg := getArgs()
+
+	msDB := ConnectAndTest("mssql", cfg.from)
+	psqlDB := ConnectAndTest("postgres", cfg.to)
 
 	tables := []Table{}
 
-	for _, table := range table_names {
+	for _, table := range cfg.tables {
 		cols := getColumns(table, msDB)
 		tt := Table{
 			OriginalName: table,
@@ -52,19 +62,25 @@ func main() {
 		//}
 		//log.Println(tt.CreateSql())
 
-		log.Println("Dropping  ", tt.NewName)
-		if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
-			log.Fatal(err)
+		if cfg.drop {
+			log.Println("Dropping  ", tt.NewName)
+			if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		log.Println("Createing ", tt.NewName)
-		if _, err := psqlDB.Exec(tt.CreateSql()); err != nil {
-			log.Fatal(err)
-		}
+		if cfg.print {
+			fmt.Println(tt.CreateSql())
+		} else {
+			log.Println("Createing ", tt.NewName)
+			if _, err := psqlDB.Exec(tt.CreateSql()); err != nil {
+				log.Fatal(err)
+			}
 
-		log.Println("Copying   ", tt.NewName)
-		if err := CopyTable(msDB, psqlDB, tt); err != nil {
-			log.Fatal(err)
+			log.Println("Copying   ", tt.NewName)
+			if err := CopyTable(msDB, psqlDB, tt); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 	}
@@ -120,13 +136,26 @@ func ConnectAndTest(driverName, dataSourceName string) *sql.DB {
 	return db
 }
 
-const usage = `mssql_migrate <from> <to> <table> [table ...]`
+const usage = `mssql_migrate [--drop] [--print] <from> <to> <table> [table ...]`
 
-func getArgs() (from, to string, tables []string) {
-	if len(os.Args) < 4 {
-		log.Fatal("Usage: ", usage)
+func getArgs() config {
+	cfg := config{}
+
+	flag.BoolVar(&cfg.drop, "drop", false, "Drop tables before creating them")
+	flag.BoolVar(&cfg.print, "print", false, "Dont execute, only print the creation SQL")
+
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) < 3 {
+		fmt.Println("Usage: ", usage)
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
-	return os.Args[1], os.Args[2], os.Args[3:]
+	cfg.from = args[0]
+	cfg.to = args[1]
+	cfg.tables = args[2:]
+	return cfg
 }
 
 func getPrimaryKeys(table Table, db *sql.DB) []*Column {
