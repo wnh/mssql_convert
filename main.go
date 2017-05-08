@@ -42,7 +42,6 @@ func main() {
 	cfg := getArgs()
 
 	msDB := ConnectAndTest("mssql", cfg.from)
-	psqlDB := ConnectAndTest("postgres", cfg.to)
 
 	tables := []Table{}
 
@@ -62,16 +61,18 @@ func main() {
 		//}
 		//log.Println(tt.CreateSql())
 
-		if cfg.drop {
-			log.Println("Dropping  ", tt.NewName)
-			if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
-				log.Fatal(err)
-			}
-		}
-
 		if cfg.print {
 			fmt.Println(tt.CreateSql())
 		} else {
+			psqlDB := ConnectAndTest("postgres", cfg.to)
+
+			if cfg.drop {
+				log.Println("Dropping  ", tt.NewName)
+				if _, err := psqlDB.Exec(tt.DropSql()); err != nil {
+					log.Fatal(err)
+				}
+			}
+
 			log.Println("Createing ", tt.NewName)
 			if _, err := psqlDB.Exec(tt.CreateSql()); err != nil {
 				log.Fatal(err)
