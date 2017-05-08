@@ -8,7 +8,7 @@ import (
 
 // Generate a DROP TABLE statment
 func (t *Table) DropSql() string {
-	return fmt.Sprintf("DROP TABLE %s", t.NewName)
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", t.NewName)
 }
 
 // Generate a CREATE statement for building the table
