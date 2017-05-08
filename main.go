@@ -144,13 +144,16 @@ func getArgs() config {
 
 	flag.BoolVar(&cfg.drop, "drop", false, "Drop tables before creating them")
 	flag.BoolVar(&cfg.print, "print", false, "Dont execute, only print the creation SQL")
+	flag.Usage = func() {
+		fmt.Println("Usage: ", usage)
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) < 3 {
-		fmt.Println("Usage: ", usage)
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 	cfg.from = args[0]
